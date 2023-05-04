@@ -1,0 +1,27 @@
+#!/bin/bash
+
+#BSUB -n 1  # minmal numbers of processors required for a parallel job
+#BSUB -R rusage[mem=8000] # ask for memory 5G
+#BSUB -R "select[rh=8]"
+#BSUB -W 4:00 #limit the job to be finished in 12 hours
+#BSUB -J "star[1]%50"
+#BSUB -q short    # which queue we want to run in
+#BSUB -o logs/out.%J.%I.txt # log
+#BSUB -e logs/err.%J.%I.txt # error
+#BSUB -R "span[hosts=1]" # All hosts on the same chassis"
+
+i=$(($LSB_JOBINDEX- 1))
+mkdir -p logs
+
+set -e 
+set -u
+set -o pipefail
+
+utr3=(results/045.InPAS.out/4.HeLa.PE.RNA-seq/01.3UTR.annotation.RDS)
+sqlite_db=(results/045.InPAS.out/4.HeLa.PE.RNA-seq/InPAS_hugeData.sqlite)
+outdir=(results/045.InPAS.out/4.HeLa.PE.RNA-seq)
+
+singularity exec  ~/bioc_sandbox/ Rscript --vanilla scripts_hela/018.get.chr.R \
+        --outdir=${outdir[$i]}  \
+        --sqlite_db=${sqlite_db[$i]} \
+        --utr3=${utr3[$i]}

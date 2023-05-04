@@ -1,0 +1,17 @@
+Source Name	Comment[ENA_SAMPLE]	Characteristics[organism part]	Characteristics[organism]	Comment[LIBRARY_SOURCE]	Comment[LIBRARY_STRATEGY]	Comment[LIBRARY_LAYOUT]	Comment[ENA_RUN]	Comment[FASTQ_URI]	Comment[SPOT_LENGTH]
+brain_3b	ERS327019	cerebral cortex	Homo sapiens	TRANSCRIPTOMIC	RNA-Seq	PAIRED	ERR315477	ftp://ftp.sra.ebi.ac.uk/vol1/fastq/ERR315/ERR315477/ERR315477_1.fastq.gz	102
+brain_3b	ERS327019	cerebral cortex	Homo sapiens	TRANSCRIPTOMIC	RNA-Seq	PAIRED	ERR315477	ftp://ftp.sra.ebi.ac.uk/vol1/fastq/ERR315/ERR315477/ERR315477_2.fastq.gz	102
+brain_3c	ERS326996	cerebral cortex	Homo sapiens	TRANSCRIPTOMIC	RNA-Seq	PAIRED	ERR315455	ftp://ftp.sra.ebi.ac.uk/vol1/fastq/ERR315/ERR315455/ERR315455_1.fastq.gz	102
+brain_3c	ERS326996	cerebral cortex	Homo sapiens	TRANSCRIPTOMIC	RNA-Seq	PAIRED	ERR315455	ftp://ftp.sra.ebi.ac.uk/vol1/fastq/ERR315/ERR315455/ERR315455_2.fastq.gz	102
+brain_a	ERS327024	cerebral cortex	Homo sapiens	TRANSCRIPTOMIC	RNA-Seq	PAIRED	ERR315432	ftp://ftp.sra.ebi.ac.uk/vol1/fastq/ERR315/ERR315432/ERR315432_1.fastq.gz	102
+brain_a	ERS327024	cerebral cortex	Homo sapiens	TRANSCRIPTOMIC	RNA-Seq	PAIRED	ERR315432	ftp://ftp.sra.ebi.ac.uk/vol1/fastq/ERR315/ERR315432/ERR315432_2.fastq.gz	102
+liver_a	ERS326991	liver	Homo sapiens	TRANSCRIPTOMIC	RNA-Seq	PAIRED	ERR315463	ftp://ftp.sra.ebi.ac.uk/vol1/fastq/ERR315/ERR315463/ERR315463_1.fastq.gz	102
+liver_a	ERS326991	liver	Homo sapiens	TRANSCRIPTOMIC	RNA-Seq	PAIRED	ERR315463	ftp://ftp.sra.ebi.ac.uk/vol1/fastq/ERR315/ERR315463/ERR315463_2.fastq.gz	102
+liver_a	ERS326991	liver	Homo sapiens	TRANSCRIPTOMIC	RNA-Seq	PAIRED	ERR315451	ftp://ftp.sra.ebi.ac.uk/vol1/fastq/ERR315/ERR315451/ERR315451_1.fastq.gz	102
+liver_a	ERS326991	liver	Homo sapiens	TRANSCRIPTOMIC	RNA-Seq	PAIRED	ERR315451	ftp://ftp.sra.ebi.ac.uk/vol1/fastq/ERR315/ERR315451/ERR315451_2.fastq.gz	102
+liver_c	ERS326939	liver	Homo sapiens	TRANSCRIPTOMIC	RNA-Seq	PAIRED	ERR315327	ftp://ftp.sra.ebi.ac.uk/vol1/fastq/ERR315/ERR315327/ERR315327_1.fastq.gz	102
+liver_c	ERS326939	liver	Homo sapiens	TRANSCRIPTOMIC	RNA-Seq	PAIRED	ERR315327	ftp://ftp.sra.ebi.ac.uk/vol1/fastq/ERR315/ERR315327/ERR315327_2.fastq.gz	102
+liver_c	ERS326939	liver	Homo sapiens	TRANSCRIPTOMIC	RNA-Seq	PAIRED	ERR315394	ftp://ftp.sra.ebi.ac.uk/vol1/fastq/ERR315/ERR315394/ERR315394_1.fastq.gz	102
+liver_c	ERS326939	liver	Homo sapiens	TRANSCRIPTOMIC	RNA-Seq	PAIRED	ERR315394	ftp://ftp.sra.ebi.ac.uk/vol1/fastq/ERR315/ERR315394/ERR315394_2.fastq.gz	102
+liver_d	ERS326962	liver	Homo sapiens	TRANSCRIPTOMIC	RNA-Seq	PAIRED	ERR315414	ftp://ftp.sra.ebi.ac.uk/vol1/fastq/ERR315/ERR315414/ERR315414_1.fastq.gz	102
+liver_d	ERS326962	liver	Homo sapiens	TRANSCRIPTOMIC	RNA-Seq	PAIRED	ERR315414	ftp://ftp.sra.ebi.ac.uk/vol1/fastq/ERR315/ERR315414/ERR315414_2.fastq.gz	102

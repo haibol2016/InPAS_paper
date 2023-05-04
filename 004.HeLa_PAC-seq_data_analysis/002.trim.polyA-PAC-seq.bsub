@@ -1,0 +1,26 @@
+#!/bin/bash
+
+#BSUB -n 1 # minmal numbers of processors required for a parallel job
+#BSUB -R rusage[mem=4000] # ask for memory 5G
+#BSUB -W 12:00 #limit the job to be finished in 12 hours
+#BSUB -J "fastp[61-66]"
+#BSUB -q long   # which queue we want to run in
+#BSUB -o logs/out.%J.%I.txt # log
+#BSUB -e logs/err.%J.%I.txt # error
+#BSUB -R "span[hosts=1]" # All hosts on the same chassis"
+##BSUB -w "done(5423513)"
+
+i=$(($LSB_JOBINDEX- 1))
+mkdir -p logs
+
+module load perl/5.18.1
+
+in=clean.data/2.HeLa.PAC-seq.cutadapt.out
+fastq=(`ls $in/*.gz`)
+name=(`ls $in/*.gz | perl -p -e 's{.+/(.+)}{$1}'`)
+sub_dir=(`ls $in/*.gz | perl -p -e 's{.+/(.+)/.+}{$1}'`)
+
+out=clean.data/${sub_dir[$i]}.final.out
+mkdir -p $out
+
+cat ${fastq[$i]} | perl trim.polyA-PAC-seq.pl | gzip -f -9 > $out/${name[$i]}

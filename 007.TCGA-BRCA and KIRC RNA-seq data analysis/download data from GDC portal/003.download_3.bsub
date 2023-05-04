@@ -1,0 +1,38 @@
+#!/bin/bash
+
+#BSUB -n 8  # minmal numbers of processors required for a parallel job
+#BSUB -R rusage[mem=8000] # ask for memory 5G
+#BSUB -R select[rh=8]
+#BSUB -W 72:00 #limit the job to be finished in 12 hours
+#BSUB -J "star[21-29]%30"
+#BSUB -q long    # which queue we want to run in
+#BSUB -o logs/out.%J.%I.txt # log
+#BSUB -e logs/err.%J.%I.txt # error
+#BSUB -R "span[hosts=1]" # All hosts on the same chassis"
+
+i=$(($LSB_JOBINDEX- 1))
+mkdir -p logs
+
+
+set -e 
+set -u
+set -o pipefail
+
+
+token=gdc-user-token.2022-10-03T14_39_38.315Z.txt 
+manifest=TCGA_KIRC.manifest.metadata.txt
+mkdir -p ~/lucio_castilla/KIRC
+
+st=$(($i * 5 + 2))
+ed=$(($st + 5))
+
+./gdc-client download --log-file LOG_FILE \
+                           -t  $token  \
+                           -d  kirc_bam  \
+                           -n 8 \
+                           --http-chunk-size 2048 \
+                           --save-interval 2048000000 \
+                           --no-related-files  --no-annotations \
+                           --retry-amount 3 \
+                           --wait-time 10 --latest  \
+                           -m  <(cut -f1-5 ${manifest} | awk -v start=$st -v end=$ed 'BEGIN{FS=OFS="\t"} NR ==1 || (NR >=start && NR < end){print}') 

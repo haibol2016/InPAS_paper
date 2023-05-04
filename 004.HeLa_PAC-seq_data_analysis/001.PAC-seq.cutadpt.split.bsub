@@ -1,0 +1,49 @@
+#!/bin/bash
+
+#BSUB -n 10  # minmal numbers of processors required for a parallel job
+#BSUB -R rusage[mem=4000] # ask for memory 5G
+#BSUB -W 12:00 #limit the job to be finished in 12 hours
+#BSUB -J "fastp[1-12]"
+#BSUB -q long   # which queue we want to run in
+#BSUB -o logs/out.%J.%I.txt # log
+#BSUB -e logs/err.%J.%I.txt # error
+#BSUB -R "span[hosts=1]" # All hosts on the same chassis"
+##BSUB -w "done(5423513)"
+
+i=$(($LSB_JOBINDEX- 1))
+mkdir -p logs
+
+module load perl/5.18.1
+module load cutadapt/2.9
+
+
+## fastqsplitter is from https://github.com/LUMC/fastqsplitter
+
+source ~/work/mccb/bin/miniconda2/etc/profile.d/conda.sh
+conda activate fastqsplitter
+
+in=data.fastq.gz/2.HeLa.PAC-seq
+fastq=(`ls $in/*.gz`)
+name=(`ls $in/*.gz | perl -p -e 's{.+/(.+)}{$1}'`)
+sub_dir=(`ls $in/*.gz | perl -p -e 's{.+/(.+)/.+}{$1}'`)
+adapter="NNNNAGATCGGAAGAGCACACGTCTGAACTCCAGTCAC"
+
+out=clean.data/${sub_dir[$i]}.cutadapt.out
+mkdir -p $out
+
+outs=()
+for j in {0..9}
+do
+  outs+=("-o $out/0${j}.${name[$i]}")
+done
+
+if [ $i -eq 0 -o $i -eq 2  -o $i -eq 4  -o $i -eq 6  -o $i -eq 8  -o $i -eq 10 ] 
+then
+cutadapt -a $adapter -m 35 -j 10 --nextseq-trim 20  ${fastq[$i]} |\
+              fastqsplitter -i - ${outs[@]} \
+              -c 9  -t 4 --python
+
+else
+cutadapt -a $adapter -m 35 -j 10 --nextseq-trim 20  ${fastq[$i]} > $out/${name[$i]}
+fi
+  

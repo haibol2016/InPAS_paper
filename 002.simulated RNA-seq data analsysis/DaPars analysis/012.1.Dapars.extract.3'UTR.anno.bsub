@@ -1,0 +1,32 @@
+#!/bin/bash
+
+#BSUB -n 1  # minmal numbers of processors required for a parallel job
+#BSUB -R rusage[mem=4000] # ask for memory 5G
+#BSUB -W 8:00 #limit the job to be finished in 12 hours
+#BSUB -J "star[1]%50"
+#BSUB -q long    # which queue we want to run in
+#BSUB -o logs/out.%J.%I.txt # log
+#BSUB -e logs/err.%J.%I.txt # error
+#BSUB -R "span[hosts=1]" # All hosts on the same chassis"
+##BSUB -w "done(1237649)"
+
+i=$(($LSB_JOBINDEX- 1))
+
+module load bedtools/2.29.2
+set -euo pipefail
+
+gene_model=(`ls docs_2/{005.long.tx,006.short.single.tx}/*.bed`)
+map=(`ls  docs_2/{005.long.tx,006.short.single.tx}/*.tx.gene.mapping`)
+name=(long short.single)
+
+for n in {0..1}
+do
+dapars=/home/hl84w/work/mccb/bin/Dapars/src
+out=results/012.DaPars.out/polyester.simulation/${name[$n]}
+
+mkdir -p $out
+
+python ${dapars}/DaPars_Extract_Anno.py -b  ${gene_model[$n]} \
+                       -s  ${map[$n]}  \
+                       -o  $out/${name[$n]}.extract.anno
+done

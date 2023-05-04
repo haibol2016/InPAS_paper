@@ -1,0 +1,26 @@
+#!/bin/bash
+
+#BSUB -n 1  # minmal numbers of processors required for a parallel job
+#BSUB -R rusage[mem=8000] # ask for memory 5G
+#BSUB -R "select[rh=8]"
+#BSUB -W 4:00 #limit the job to be finished in 12 hours
+#BSUB -J "star[1]%50"
+#BSUB -q short    # which queue we want to run in
+#BSUB -o logs/out.%J.%I.txt # log
+#BSUB -e logs/err.%J.%I.txt # error
+#BSUB -R "span[hosts=1]" # All hosts on the same chassis"
+##BSUB -w "done(1237649)"
+
+i=$(($LSB_JOBINDEX- 1))
+mkdir -p logs
+
+set -euo pipefail
+
+chromosome_info=human_gencode_v34/GRCh38.primary_assembly.genome.chr.length
+gtf=(human_gencode_v34/002.Hela.expressed/00.new.filter.gtf/001.HeLa.expressed.tx.gtf)
+name=(Hela.expressed.gencode.v34.refiltered)
+out=(human_gencode_v34/002.Hela.expressed)
+mkdir -p ${out[$i]}
+
+singularity exec ~/bioc_sandbox Rscript scripts_hela/014.TxDb.R \
+         ${chromosome_info}  ${gtf[$i]}  ${out[$i]}/${name[$i]}.TxDb.sqlite

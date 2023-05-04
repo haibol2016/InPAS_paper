@@ -1,0 +1,26 @@
+#!/bin/bash
+
+#BSUB -n 1  # minmal numbers of processors required for a parallel job
+#BSUB -R rusage[mem=8000] # ask for memory 5G
+#BSUB -R "select[rh=8]"
+#BSUB -W 4:00 #limit the job to be finished in 12 hours
+#BSUB -J "star[1-2]%50"
+#BSUB -q short    # which queue we want to run in
+#BSUB -o logs/out.%J.%I.txt # log
+#BSUB -e logs/err.%J.%I.txt # error
+#BSUB -R "span[hosts=1]" # All hosts on the same chassis"
+##BSUB -w "done(1237649)"
+
+i=$(($LSB_JOBINDEX- 1))
+mkdir -p logs
+
+set -euo pipefail
+
+chromosome_info=human_gencode_v34/GRCh38.primary_assembly.genome.chr.length
+gtf=(`ls docs_polyester/{003.long.tx4simulation_sorted.gtf,003.single_short.tx4simulation_sorted.gtf}`)
+name=(008.polyester.sim.long 008.polyester.sim.short.single)
+out=(results/080.polyester.simulation/polyester.sim.long  results/080.polyester.simulation/polyester.sim.short.single)
+mkdir -p ${out[$i]}
+
+singularity exec ~/bioc_sandbox  Rscript scripts_polyester/014.TxDb.R  ${chromosome_info}  \
+               ${gtf[$i]}  ${out[$i]}/${name[$i]}.TxDb.sqlite

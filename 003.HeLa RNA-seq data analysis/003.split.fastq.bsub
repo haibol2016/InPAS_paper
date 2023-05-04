@@ -1,0 +1,31 @@
+#!/bin/bash
+
+#BSUB -n 16  # minmal numbers of processors required for a parallel job
+#BSUB -R rusage[mem=4000] # ask for memory 5G
+#BSUB -W 8:00 #limit the job to be finished in 12 hours
+#BSUB -J "split[1-8]"
+#BSUB -q long   # which queue we want to run in
+#BSUB -o logs/out.%J.%I.txt # log
+#BSUB -e logs/err.%J.%I.txt # error
+#BSUB -R "span[hosts=1]" # All hosts on the same chassis"
+##BSUB -w "done(16408)"
+
+i=$(($LSB_JOBINDEX- 1))
+
+module load subread/1.6.2 
+module load samtools/1.9
+
+source ~/work/mccb/bin/miniconda2/etc/profile.d/conda.sh
+conda activate fastqsplitter
+
+in=clean.data/4.HeLa.PE.RNA-seq
+R1=(`ls $in/*R[12].fastq.gz`)
+name=(`ls $in/*R[12].fastq.gz | perl -p -e s'{.+/(.+)}{$1}'`)
+
+out=clean.data/4.splitted.HeLa.PE.RNA-seq
+mkdir -p $out
+
+fastqsplitter -i ${R1[$i]}  -o $out/01.${name[$i]} -o $out/02.${name[$i]} \
+              -o $out/03.${name[$i]}  -o $out/04.${name[$i]} \
+              -c 9  -t 4 --python
+

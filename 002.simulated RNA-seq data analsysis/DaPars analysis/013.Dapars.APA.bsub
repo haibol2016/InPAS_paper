@@ -1,0 +1,25 @@
+#!/bin/bash
+
+#BSUB -n 8  # minmal numbers of processors required for a parallel job
+#BSUB -R rusage[mem=8000] # ask for memory 5G
+#BSUB -W 120:00 #limit the job to be finished in 12 hours
+#BSUB -J "star[1-16]%50"
+#BSUB -q long    # which queue we want to run in
+#BSUB -o logs/out.%J.%I.txt # log
+#BSUB -e logs/err.%J.%I.txt # error
+#BSUB -R "span[hosts=1]" # All hosts on the same chassis"
+##BSUB -w "done(1237649)"
+
+i=$(($LSB_JOBINDEX- 1))
+
+source  ~/work/mccb/bin/miniconda2/etc/profile.d/conda.sh
+conda activate
+
+module load bedtools/2.29.2
+
+config_file=(`ls docs_2/006.short.single.DaPars.config/*.config docs_2/006.long.DaPars.config/*.config`)
+
+dapars=/home/hl84w/work/mccb/bin/Dapars/src
+python ${dapars}/DaPars_main.py  \
+          ${config_file[$i]}
+conda deactivate 

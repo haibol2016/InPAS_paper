@@ -1,0 +1,33 @@
+#!/bin/bash
+
+#BSUB -n 1 # minmal numbers of processors required for a parallel job
+#BSUB -R rusage[mem=2000] # ask for memory 5G
+#BSUB -R "select[rh=8]"
+#BSUB -W 4:00 #limit the job to be finished in 12 hours
+#BSUB -J "star[1-50]%50"
+#BSUB -q short    # which queue we want to run in
+#BSUB -o logs/out.%J.%I.txt # log
+#BSUB -e logs/err.%J.%I.txt # error
+#BSUB -R "span[hosts=1]" # All hosts on the same chassis"
+#BSUB -w "done(9415295)"
+
+i=$(($LSB_JOBINDEX- 1))
+mkdir -p logs
+
+#source ~/work/mccb/bin/miniconda2/etc/profile.d/conda.sh
+#conda activate seurat4
+
+set -e 
+set -u
+set -o pipefail
+
+TxDb_sqlite=(human_gencode_v34/005.nine.cancer.expressed/*.TxDb.sqlite)
+sub_dir=(`ls human_gencode_v34/005.nine.cancer.expressed/*.TxDb.sqlite | perl -p -e 's{.+/(.+?).TxDb.sqlite}{$1}'` )
+utr3=results/014.InPAS.out/${sub_dir[$i]}/01.3UTR.annotation.RDS
+sqlite_db=results/014.InPAS.out/${sub_dir[$i]}/InPAS_hugeData.sqlite
+outdir=results/014.InPAS.out/${sub_dir[$i]}
+
+time singularity exec  ~/bioc_sandbox/ Rscript --vanilla scripts_liver/018.get.chr.R \
+        --outdir=${outdir}  \
+        --sqlite_db=${sqlite_db} \
+        --utr3=${utr3}

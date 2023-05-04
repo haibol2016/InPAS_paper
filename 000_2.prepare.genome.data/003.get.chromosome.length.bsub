@@ -1,0 +1,28 @@
+#BSUB -R rusage[mem=2000] # ask for memory 5G
+#BSUB -W 8:00 #limit the job to be finished in 12 hours
+#BSUB -J "fastQC[1]"
+#BSUB -q long   # which queue we want to run in
+#BSUB -o logs/out.%J.%I.txt # log
+#BSUB -e logs/err.%J.%I.txt # error
+#BSUB -R "span[hosts=1]" # All hosts on the same chassis"
+##BSUB -w "done(5423513)"
+
+i=$(($LSB_JOBINDEX- 1))
+mkdir -p logs
+
+dir=~/work/mccb/genome/Homo_sapiens/human_gencode_v34
+
+gunzip -c  $dir/GRCh38.primary_assembly.genome.fa.gz
+
+samtools faidx $dir/GRCh38.primary_assembly.genome.fa
+fasta=$dir/GRCh38.primary_assembly.genome.fa
+name=`ls $dir/GRCh38.primary_assembly.genome.fa| perl -p -e 's{.fa}{}'
+
+## generate dict for the ref genome using picard tools
+java -jar CreateSequenceDictionary.jar \
+         REFERENCE=$fasta \
+         OUTPUT=${name}.dict
+
+## chromosome length
+
+cut -f1-2 ${name}.dict  | perl -p -e 's{SN:}{}; s{LN:}{}' > $dir/${name}.chromosome.length

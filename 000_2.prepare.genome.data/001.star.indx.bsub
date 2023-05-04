@@ -1,0 +1,37 @@
+#!/bin/bash
+
+#BSUB -n 8  # minmal numbers of processors required for a parallel job
+#BSUB -R rusage[mem=16000] # ask for memory 5G
+#BSUB -W 8:00 #limit the job to be finished in 12 hours
+#BSUB -J "fastQC[1-3]"
+#BSUB -q long   # which queue we want to run in
+#BSUB -o logs/out.%J.%I.txt # log
+#BSUB -e logs/err.%J.%I.txt # error
+#BSUB -R "span[hosts=1]" # All hosts on the same chassis"
+##BSUB -w "done(5423513)"
+
+i=$(($LSB_JOBINDEX- 1))
+mkdir -p logs
+
+module load java/1.8.0_77 
+module load star/2.5.3a
+
+dir=~/work/mccb/genome/Homo_sapiens/human_gencode_v34
+mkdir -p $dir
+
+gunzip -c $dir/GRCh38.primary_assembly.genome.fa.gz
+gunzip -c $dir/gencode.v34.primary_assembly.annotation.gtf.gz
+
+fasta=$dir/GRCh38.primary_assembly.genome.fa
+gtf=$dir/gencode.v34.primary_assembly.annotation.gtf
+overhang=(49 75 99)
+out=docs/Human.GenCodeV34.sjdboverhang_${overhang[$i]}.star.v253a
+mkdir -p $out
+
+STAR --runMode genomeGenerate \
+        --runThreadN 8  --genomeDir $out   \
+        --limitGenomeGenerateRAM 128000000000  \
+        --sjdbGTFfile $gtf \
+        --sjdbOverhang ${overhang[$i]} \
+        --genomeFastaFiles $fasta \
+        --outFileNamePrefix ${overhang[$i]} 

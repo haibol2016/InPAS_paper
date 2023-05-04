@@ -1,0 +1,33 @@
+#!/bin/bash
+
+#BSUB -n 1  # minmal numbers of processors required for a parallel job
+#BSUB -R rusage[mem=16000] # ask for memory 5G
+#BSUB -W 4:00 #limit the job to be finished in 12 hours
+#BSUB -J "star[1-8]%50"
+#BSUB -q short   # which queue we want to run in
+#BSUB -o logs/out.%J.%I.txt # log
+#BSUB -e logs/err.%J.%I.txt # error
+#BSUB -R "span[hosts=1]" # All hosts on the same chassis"
+##BSUB -w "done(16408)"
+
+i=$(($LSB_JOBINDEX- 1))
+
+module load samtools/1.9
+module load perl/5.18.1
+module load bedtools/2.29.2
+
+in=results/008.candidate.PAS.out
+
+bedgraph=(${in}/*.bedgraph)
+name=(`ls ${in}/*.bedgraph | perl -p -e s'{.+/(.+).bedgraph}{$1}'`)
+genome=~/work/mccb/genome/Homo_sapiens/human_gencode_v34/GRCh38.primary_assembly.genome.chr.length
+fasta=~/work/mccb/genome/Homo_sapiens/human_gencode_v34/GRCh38.primary_assembly.genome.fa
+
+out=results/008.candidate.PAS.context.out
+mkdir -p $out
+
+awk 'BEGIN{FS=OFS="\t"} $4 >= 3  {print $1, $2-1, $2, $1":"$2":"$3":"$4":"$5, $4, $3}'  ${bedgraph[$i]} | \
+      bedtools sort -g $genome -i - | bedtools slop -l 100 -r 99  -g $genome -i - | \
+      bedtools getfasta -name -s  -fi $fasta  -bed - | perl -p -e 's{\n}{\t}g'  | \
+      perl -p -e 's{\t>}{\n>}g' | \
+      awk 'BEGIN{FS=OFS="\t"} $2 !~/N|n/ {$2= gensub(/T|t/, "U", "g", $2); print $1"\n"$2}' > $out/${name[$i]}.fasta

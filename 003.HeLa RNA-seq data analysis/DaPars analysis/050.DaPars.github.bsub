@@ -1,0 +1,33 @@
+#!/bin/bash
+
+#BSUB -n 1  # minmal numbers of processors required for a parallel job
+#BSUB -R rusage[mem=64000] # ask for memory 5G
+#BSUB -W 48:00 #limit the job to be finished in 12 hours
+#BSUB -J "star[1]%50"
+#BSUB -q long    # which queue we want to run in
+#BSUB -o logs/out.%J.%I.txt # log
+#BSUB -e logs/err.%J.%I.txt # error
+#BSUB -R "span[hosts=1]" # All hosts on the same chassis"
+##BSUB -w "done(1237649)"
+
+i=$(($LSB_JOBINDEX- 1))
+
+source ~/work/mccb/bin/miniconda2/etc/profile.d/conda.sh
+conda activate
+
+module load bedtools/2.29.2
+
+# Step 1: Generate region annotation: 
+Dapars_src=~/bin/dapars/src
+
+in=human_gencode_v34/002.Hela.expressed/00.new.filter.gtf
+gene_bed=$in/001.HeLa.expressed.tx.refilt.bed
+symbol_map=$in/001.HeLa.expressed.tx.gene.refilt.map
+outdir=$in
+#python $Dapars_src/DaPars_Extract_Anno.py -b $gene_bed \
+#                                          -s $symbol_map \
+#                                          -o $outdir/00.HeLa.extracted.3UTR.refilt.bed
+
+# Step 2: main function to get final result: 
+configure_file=human_gencode_v34/002.Hela.expressed/00.new.filter.gtf/01.HeLa.Github.DaPars.config
+python $Dapars_src/DaPars_main.py $configure_file

@@ -1,0 +1,21 @@
+#!/bin/bash
+#BSUB -n 1 # minmal numbers of processors required for a parallel job
+#BSUB -R rusage[mem=4000] # ask for memory 32G
+#BSUB -W 4:00 #limit the job to be finished in 72 hours
+#BSUB -J "salmon[1-185]"
+#BSUB -q long # which queue we want to run in
+#BSUB -o logs/out.%J.%I.txt # log
+#BSUB -e logs/err.%J.%I.txt # error
+#BSUB -R "span[hosts=1]" # All hosts on the same chassis"
+i=$(($LSB_JOBINDEX -1))
+mkdir -p logs
+
+exp_gene=(docs/BRCA.paired.sample.tx.expressed.list/*.expressed.tx.list.txt)
+gtf=../human_gencode_v34/gencode.v34.primary_assembly.annotation.gtf
+name=(`ls docs/BRCA.paired.sample.tx.expressed.list/*.expressed.tx.list.txt | perl -p -e 's{.+/(.+?)\..+}{$1}'`)
+
+out=docs/BRCA/paired.sample.tx.expressed.gtf
+mkdir -p $out
+
+
+grep -F -w -f ${exp_gene[$i]}  ${gtf} > $out/${name[$i]}.expressed.gtf

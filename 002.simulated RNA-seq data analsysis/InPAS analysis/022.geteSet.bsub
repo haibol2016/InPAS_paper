@@ -1,0 +1,40 @@
+#!/bin/bash
+
+#BSUB -n 8  # minmal numbers of processors required for a parallel job
+#BSUB -R rusage[mem=8000] # ask for memory 5G
+#BSUB -R select[rh=8]
+#BSUB -W 8:00 #limit the job to be finished in 12 hours
+#BSUB -J "star[1-16]%50"
+#BSUB -q long    # which queue we want to run in
+#BSUB -o logs/out.%J.%I.txt # log
+#BSUB -e logs/err.%J.%I.txt # error
+#BSUB -R "span[hosts=1]" # All hosts on the same chassis"
+#BSUB -w "done(1131023)"
+
+i=$(($LSB_JOBINDEX- 1))
+mkdir -p logs
+
+set -e 
+set -u
+set -o pipefail
+
+sqlite_db=(results/081.polyester.simulation/*/*/InPAS_hugeData.sqlite)
+outdir=(results/081.polyester.simulation/*/*)
+
+TxDb_f=(results/080.polyester.simulation/polyester.sim.long/008.polyester.sim.long.TxDb.sqlite  results/080.polyester.simulation/polyester.sim.short.single/008.polyester.sim.short.single.TxDb.sqlite)
+TxDb=()
+
+for k in {0..1}
+do
+  for l in {0..7}
+  do
+     TxDb+=(${TxDb_f[$k]})     
+  done
+done
+
+
+time singularity exec  ~/bioc_sandbox/ Rscript --vanilla scripts_polyester/022.geteSet.R \
+        --outdir=${outdir[$i]}  \
+        --TxDb_file=${TxDb[$i]} \
+        --sqlite_db=${sqlite_db[$i]}
+

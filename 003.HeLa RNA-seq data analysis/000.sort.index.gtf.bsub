@@ -1,0 +1,25 @@
+#!/bin/bash
+
+#BSUB -n 1  # minmal numbers of processors required for a parallel job
+#BSUB -R rusage[mem=8000] # ask for memory 5G
+#BSUB -W 48:00 #limit the job to be finished in 12 hours
+#BSUB -J "star[1]%50"
+#BSUB -q long    # which queue we want to run in
+#BSUB -o logs/out.%J.%I.txt # log
+#BSUB -e logs/err.%J.%I.txt # error
+#BSUB -R "span[hosts=1]" # All hosts on the same chassis"
+##BSUB -w "done(1237649)"
+
+i=$(($LSB_JOBINDEX- 1))
+
+module load samtools/1.9
+
+
+#gtf=~/work/mccb/genome/Homo_sapiens/GRCh38/Homo_sapiens.GRCh38.89.gtf.gz
+in=human_gencode_v34/002.Hela.expressed/00.new.filter.gtf
+gtf=$in/001.HeLa.expressed.tx.gtf
+
+#(grep -P "^#" <(zcat $gtf); grep -v "^#" <(zcat $gtf) | sort  -t $'\t' -k1,1V -k4,4n -k5,5n) | bgzip > docs_2/GRCh38.gencode.v34.gtf.gz
+
+(grep -P "^#" $gtf; grep -v "^#" $gtf | sort  -t $'\t' -k1,1V -k4,4n -k5,5n) | bgzip > $in/001.HeLa.Gencode.v34.expressed.tx.gtf.gz
+tabix $in/001.HeLa.Gencode.v34.expressed.tx.gtf.gz

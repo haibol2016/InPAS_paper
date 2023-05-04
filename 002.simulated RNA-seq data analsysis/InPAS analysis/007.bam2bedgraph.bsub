@@ -1,0 +1,41 @@
+#!/bin/bash
+
+#BSUB -n 1  # minmal numbers of processors required for a parallel job
+#BSUB -R rusage[mem=8000] # ask for memory 5G
+#BSUB -W 4:00 #limit the job to be finished in 12 hours
+#BSUB -J "star[1-16]%50"
+#BSUB -q short   # which queue we want to run in
+#BSUB -o logs/out.%J.%I.txt # log
+#BSUB -e logs/err.%J.%I.txt # error
+#BSUB -R "span[hosts=1]" # All hosts on the same chassis"
+#BSUB -w "done(1171723)"
+
+i=$(($LSB_JOBINDEX- 1))
+
+module load samtools/1.9
+module load bedtools/2.29.2
+
+in=results/006.samtools.sort.out
+bam=(`ls $in/*/*.srt.bam`) 
+
+name=(`ls $in/*/*.srt.bam | perl -p -e s'{.+/(.+?).srt.bam}{$1}'`)
+subdir=(`ls $in/*/*.srt.bam | perl -p -e s'{.+/(.+?)/.+?.srt.bam}{$1}'`)
+seq_type=PE
+
+out=~/marcus_ruscetti/haibo/results/010.bedtools.bedgraph.out/${subdir[$i]}
+
+mkdir -p $out
+
+## only unique mapping reads
+
+if [ $seq_type == "SE" ]; then
+  
+bedtools genomecov -ibam  ${bam[$i]}  -bg -split  > $out/${name[$i]}.SE.bedgraph
+else
+samtools view -bu -h -q 255 ${bam[$i]} | bedtools genomecov -ibam  - -bg -split  > $out/${name[$i]}.unique.map.bedgraph
+samtools view -bu -h -q 255 ${bam[$i]} | samtools flagstat - >  ${out}/${name[$i]}.samflagstat.txt
+fi
+
+
+
+

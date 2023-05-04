@@ -1,0 +1,58 @@
+#!/bin/bash
+
+#BSUB -n 1  # minmal numbers of processors required for a parallel job
+#BSUB -R rusage[mem=1000] # ask for memory 5G
+#BSUB -W 2:00 #limit the job to be finished in 12 hours
+#BSUB -J "star[1-8]%50"
+#BSUB -q short   # which queue we want to run in
+#BSUB -o logs/out.%J.%I.txt # log
+#BSUB -e logs/err.%J.%I.txt # error
+#BSUB -R "span[hosts=1]" # All hosts on the same chassis"
+##BSUB -w "done(1040379)"
+
+i=$(($LSB_JOBINDEX- 1))
+
+set -u
+set -e 
+set -o  pipefail
+
+module load perl/5.18.1
+
+# bedgraph files
+in=~/marcus_ruscetti/haibo/results/010.bedtools.bedgraph.out
+bedgraph_1=($in/*simulated_reads/sample_01.unique.map.bedgraph)
+bedgraph_2=($in/*simulated_reads/sample_02.unique.map.bedgraph)
+
+name=(`ls $in/*simulated_reads/sample_01.unique.map.bedgraph | perl -p -e 's{.+/(.+?simulated_reads)/.+}{$1}'`)
+
+for j in {0..1}
+do
+
+if [ "$j" -eq 0 ];
+then
+#long
+ UTRAnno=results/012.DaPars.out/polyester.simulation/long/long.extract.anno
+ out_config=docs_2/006.long.DaPars.config
+ out=results/015.polyester.DaPars.out/01.long/${name[$i]}
+else
+ #short.single
+ UTRAnno=results/012.DaPars.out/polyester.simulation/short.single/short.single.extract.anno
+ out_config=docs_2/006.short.single.DaPars.config
+ out=results/015.polyester.DaPars.out/01.short.single/${name[$i]}
+fi
+mkdir -p ${out_config}
+mkdir -p $out
+
+echo "Annotated_3UTR=${UTRAnno}" >> ${out_config}/${name[$i]}.config 
+echo "#A comma-separated list of BedGraph files of samples from condition 1"  >> ${out_config}/${name[$i]}.config 
+echo "Group1_Tophat_aligned_Wig=${bedgraph_1[$i]}"  >> ${out_config}/${name[$i]}.config
+echo "#A comma-separated list of BedGraph files of samples from condition 2"  >> ${out_config}/${name[$i]}.config
+echo "Group2_Tophat_aligned_Wig=${bedgraph_2[$i]}"  >> ${out_config}/${name[$i]}.config
+echo "Output_directory=${out}"  >> ${out_config}/${name[$i]}.config
+echo "Output_result_file=${name[$i]}.DaPars.out"  >> ${out_config}/${name[$i]}.config
+echo "#At least how many samples passing the coverage threshold in two conditions" >> ${out_config}/${name[$i]}.config
+echo -e "Num_least_in_group1=1\nNum_least_in_group2=1\nCoverage_cutoff=20" >> ${out_config}/${name[$i]}.config
+echo "#Cutoff for FDR of P-values from Fisher exact test." >> ${out_config}/${name[$i]}.config
+echo -e "FDR_cutoff=0.05\nPDUI_cutoff=0.2\nFold_change_cutoff=0.59" >> ${out_config}/${name[$i]}.config
+
+done

@@ -1,0 +1,21 @@
+#!/bin/bash
+#BSUB -n 1 # minmal numbers of processors required for a parallel job
+#BSUB -R rusage[mem=2000] # ask for memory 32G
+#BSUB -W 72:00 #limit the job to be finished in 72 hours
+#BSUB -J "salmon[1-4]"
+#BSUB -q long # which queue we want to run in
+#BSUB -o logs/out.%J.%I.txt # log
+#BSUB -e logs/err.%J.%I.txt # error
+#BSUB -R "span[hosts=1]" # All hosts on the same chassis"
+
+i=$(($LSB_JOBINDEX -1))
+mkdir -p logs
+
+expressed_tx=results/023.salmon.quant.out/002.HeLa.RNA-seq/00.final.high.long.Tx.txt
+gtf=~/work/mccb/genome/Homo_sapiens/human_gencode_v34/gencode.v34.primary_assembly.annotation.gtf.gz
+
+out=human_gencode_v34/002.Hela.expressed/00.new.filter.gtf
+mkdir -p $out
+
+awk 'BEGIN{FS=OFS="\t"}NR >1 {print $1}'  $expressed_tx  | \
+        grep -w -F -f - <(gunzip -c $gtf)  > $out/001.HeLa.expressed.tx.gtf

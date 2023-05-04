@@ -1,0 +1,44 @@
+#!/bin/bash
+
+#BSUB -n 4  # minmal numbers of processors required for a parallel job
+#BSUB -R rusage[mem=4000] # ask for memory 5G
+#BSUB -W 8:00 #limit the job to be finished in 12 hours
+#BSUB -J "fastp[1-4]"
+#BSUB -q long  # which queue we want to run in
+#BSUB -o logs/out.%J.%I.txt # log
+#BSUB -e logs/err.%J.%I.txt # error
+#BSUB -R "span[hosts=1]" # All hosts on the same chassis"
+##BSUB -w "done(5423513)"
+
+i=$(($LSB_JOBINDEX- 1))
+mkdir -p logs
+
+module load perl/5.18.1
+
+in=data.fastq.gz/4.HeLa.PE.RNA-seq
+fastq_1=(`ls $in/*_1.fastq.gz`)
+fastq_2=(`ls $in/*_2.fastq.gz`)
+name=(`ls $in/*_1.fastq.gz | perl -p -e 's{.+/(.+?)_1.fastq.gz}{$1}'`)
+sub_dir=(`ls $in/*.gz | perl -p -e 's{.+/(.+)/.+}{$1}'`)
+adapter=docs/adapter.fa
+
+out=trimmed.data/fastp/${sub_dir[$i]}
+mkdir -p $out
+
+fastp  --in1   ${fastq_1[$i]}  --in2  ${fastq_2[$i]} \
+       --out1   $out/${name[$i]}_R1.fastq.gz --out2   $out/${name[$i]}_R2.fastq.gz \
+       --unpaired1  $out/${name[$i]}.SE.fastq.gz  --unpaired2 $out/${name[$i]}.SE.fastq.gz \
+       --cut_tail  --cut_tail_window_size 4 --cut_tail_mean_quality  15 \
+       --cut_front  --cut_front_window_size 1 --cut_front_mean_quality 3 \
+       --adapter_fasta  $adapter --thread 4  \
+       --length_required  25  \
+       --json  $out/${name[$i]}.json  --html  $out/${name[$i]}.html
+
+out2=trimmed.data/${sub_dir[$i]}
+mkdir -p $out2
+
+for read in $out/*${name[$i]}_R1.fastq.gz $out/*${name[$i]}_R2.fastq.gz  $out/*${name[$i]}.SE.fastq.gz
+do
+    base=`basename $read`
+    zcat $read |  perl scripts/trim.polyATG.pl | gzip -f -9 > $out2/${base}
+done

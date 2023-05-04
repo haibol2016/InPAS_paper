@@ -1,0 +1,26 @@
+#!/bin/bash
+
+#BSUB -n 8  # minmal numbers of processors required for a parallel job
+#BSUB -R rusage[mem=4000] # ask for memory 5G
+#BSUB -W 8:00 #limit the job to be finished in 12 hours
+#BSUB -J "fastQC[1]"
+#BSUB -q long   # which queue we want to run in
+#BSUB -o logs/out.%J.%I.txt # log
+#BSUB -e logs/err.%J.%I.txt # error
+#BSUB -R "span[hosts=1]" # All hosts on the same chassis"
+
+i=$(($LSB_JOBINDEX- 1))
+mkdir -p logs
+
+set -euo pipefail
+
+dir=~/work/mccb/genome/Homo_sapiens/human_gencode_v34
+genome_fasta=$dir/GRCh38.primary_assembly.genome.fa.gz
+transcriptome_fasta=$dir/gencode.v34.transcripts.fa.gz
+
+grep "^>" <(gunzip -c $genome_fasta) | cut -d " " -f 1 > decoys.txt
+sed -i.bak -e 's/>//g'  $dir/decoys.txt
+
+cat ${transcriptome_fasta}  ${genome_fasta} > $dir/GRCm38.gentrome.fa.gz
+
+salmon index -t $dir/GRCm38.gentrome.fa.gz  -d  $dir/decoys.txt  -p 8-i $dir/salmon_index --gencode

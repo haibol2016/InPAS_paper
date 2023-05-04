@@ -1,0 +1,31 @@
+#!/bin/bash
+
+#BSUB -n 3  # minmal numbers of processors required for a parallel job
+#BSUB -R rusage[mem=16000] # ask for memory 5G
+#BSUB -W 4:00 #limit the job to be finished in 12 hours
+#BSUB -J "star[1-3]"
+#BSUB -q short   # which queue we want to run in
+#BSUB -o logs/out.%J.%I.txt # log
+#BSUB -e logs/err.%J.%I.txt # error
+#BSUB -R "span[hosts=1]" # All hosts on the same chassis"
+##BSUB -w "done(9602689)"
+
+i=$(($LSB_JOBINDEX- 1))
+
+mkdir -p logs
+
+module load samtools/1.9
+
+in=brca_bam
+name=(TCGA-A7-A0DB_T TCGA-A7-A0DC_T  TCGA-A7-A13E_T)
+
+bam=($in/*${name[$i]}*.bam)
+bam_out=(`ls ${bam[0]} | perl -p -e 's{.+/(.+)}{$1}'`)
+
+out=merged.bam
+
+mkdir -p $out
+
+samtools merge -l  9 -O BAM -@ ${#bam[@]}  $out/${bam_out[0]}  ${bam[@]}
+
+

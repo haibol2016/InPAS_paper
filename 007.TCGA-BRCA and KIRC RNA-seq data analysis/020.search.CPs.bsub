@@ -1,0 +1,41 @@
+#!/bin/bash
+
+#BSUB -n 1  # minmal numbers of processors required for a parallel job
+#BSUB -R rusage[mem=8000] # ask for memory 5G
+#BSUB -R "select[rh=8]"
+#BSUB -W 72:00 #limit the job to be finished in 12 hours
+#BSUB -J "star[1-72]%50"
+#BSUB -q long    # which queue we want to run in
+#BSUB -o logs/out.%J.%I.txt # log
+#BSUB -e logs/err.%J.%I.txt # error
+#BSUB -R "span[hosts=1]" # All hosts on the same chassis"
+##BSUB -w "done(419574)"
+
+i=$(($LSB_JOBINDEX- 1))
+mkdir -p logs
+
+#source ~/work/mccb/bin/miniconda2/etc/profile.d/conda.sh
+#conda activate seurat4
+
+set -e 
+set -u
+set -o pipefail
+data=KIRC
+TxDb_sqlite=(docs/TxDb/$data/*.TxDb.sqlite)
+sub_dir=(`ls docs/TxDb/$data/*.TxDb.sqlite | perl -p -e 's{.+/(.+?).TxDb.sqlite}{$1}'` )
+sqlite_db=results/014.InPAS.out/$data/${sub_dir[$i]}/InPAS_hugeData.sqlite
+
+outdir=results/014.InPAS.out/$data/${sub_dir[$i]}
+mkdir -p ${outdir}
+utr3=${outdir}/01.3UTR.annotation.RDS
+
+seqname=(`cat ${outdir}/02.seqnames.txt`)
+for j in ${seqname[@]}
+do
+time singularity exec  ~/bioc_sandbox/ Rscript --vanilla scripts/020.search.CPs.R \
+        --seqname=${j}  \
+        --utr3=${utr3}  \
+        --outdir=${outdir}  \
+        --TxDb_file=${TxDb_sqlite[$i]}    \
+        --sqlite_db=${sqlite_db}
+done

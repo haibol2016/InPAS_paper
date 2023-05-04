@@ -1,0 +1,43 @@
+#!/bin/bash
+
+#BSUB -n 1  # minmal numbers of processors required for a parallel job
+#BSUB -R rusage[mem=32000] # ask for memory 5G
+#BSUB -W 48:00 #limit the job to be finished in 12 hours
+#BSUB -J "star[8]%50"
+#BSUB -q long   # which queue we want to run in
+#BSUB -o logs/out.%J.%I.txt # log
+#BSUB -e logs/err.%J.%I.txt # error
+#BSUB -R "span[hosts=1]" # All hosts on the same chassis"
+##BSUB -w "done(16408)"
+
+i=$(($LSB_JOBINDEX- 1))
+
+module load samtools/1.9
+module load perl/5.18.1
+module load gcc/8.1.0
+
+source ~/work/mccb/bin/miniconda2/etc/profile.d/conda.sh
+conda activate DeepPASTA_env
+
+fasta=(results/008.candidate.PAS.context.out/*.fasta.1) 
+structure=(results/008.RNAshapes.2.out/*.4.txt_1)
+
+name=(`ls results/008.candidate.PAS.context.out/*.fasta.1 | perl -p -e 's{.+/(.+?).fasta.1}{$1}'`)
+
+predict=/home/hl84w/work/mccb/bin/DeepPASTA/polyA_site_prediction/DeepPASTA_polyA_site_prediction_testing.py
+
+out=results/008_3.DeepPasta.out
+mkdir -p $out
+
+#split -l 40000 ${fasta[$i]} ${fasta[$i]}
+#split -l 80000 ${structure[$i]} ${structure[$i]}
+
+fastas=(${fasta[$i]}[a-z]*)
+structures=(${structure[$i]}[a-z]*)
+
+num={0..$((${#fastas[@]}-1))}
+for f in 14
+do
+python $predict -testSeq ${fastas[$f]}  -testSS ${structures[$f]}   \
+                -o $out/${name[$i]}.${f}.polyA.site.prediction.txt
+done

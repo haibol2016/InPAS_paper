@@ -1,0 +1,27 @@
+#!/bin/bash
+
+#BSUB -n 4  # minmal numbers of processors required for a parallel job
+#BSUB -R rusage[mem=8000] # ask for memory 5G
+#BSUB -W 4:00 #limit the job to be finished in 12 hours
+#BSUB -J "star[1-4]%50"
+#BSUB -q short   # which queue we want to run in
+#BSUB -o logs/out.%J.%I.txt # log
+#BSUB -e logs/err.%J.%I.txt # error
+#BSUB -R "span[hosts=1]" # All hosts on the same chassis"
+##BSUB -w "done(16408)"
+
+i=$(($LSB_JOBINDEX- 1))
+
+module load samtools/1.9
+in=(~/michael_lodato/ATAC-seq/InPAS/006.samtools.sort.out/1.MAQC.polyA-seq ~/michael_lodato/ATAC-seq/InPAS/006.samtools.sort.out/2.HeLa.PAC-seq  ~/michael_lodato/ATAC-seq/InPAS/006.samtools.sort.out/3.MAQC.SE.RNA-seq  ~/michael_lodato/ATAC-seq/InPAS/006.samtools.sort.out/4.splitted.HeLa.PE.RNA-seq) 
+
+# list of absolute path
+list=(${in[2]}/*.list*)
+name=(`ls ${in[2]}/*.list* | perl -p -e s'{.+/(.+)_bam.list_(\d+)}{$1.$2}'`)
+sub_dir=(`ls ${in[2]}/*.list* | perl -p -e s'{.+/(.+)/.+}{$1}'`)
+out=~/michael_lodato/ATAC-seq/InPAS/007.samtools.merge.out/${sub_dir[$i]}
+
+mkdir -p $out
+samtools merge  -f -b ${list[$i]}  -O BAM -@ 4  $out/${name[$i]}.srt.mrg.bam 
+samtools index  $out/${name[$i]}.srt.mrg.bam
+

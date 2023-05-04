@@ -1,0 +1,45 @@
+#!/bin/bash
+
+#BSUB -n 1  # minmal numbers of processors required for a parallel job
+#BSUB -R rusage[mem=8000] # ask for memory 5G
+#BSUB -R select[rh=8]
+#BSUB -W 4:00 #limit the job to be finished in 12 hours
+#BSUB -J "star[1-16]%50"
+#BSUB -q short    # which queue we want to run in
+#BSUB -o logs/out.%J.%I.txt # log
+#BSUB -e logs/err.%J.%I.txt # error
+#BSUB -R "span[hosts=1]" # All hosts on the same chassis"
+
+i=$(($LSB_JOBINDEX- 1))
+mkdir -p logs
+
+set -euo pipefail
+
+TxDb=(results/080.polyester.simulation/polyester.sim.long/008.polyester.sim.long.TxDb.sqlite  
+      results/080.polyester.simulation/polyester.sim.short.single/008.polyester.sim.short.single.TxDb.sqlite)
+input_gtf_type=(long  short.single)
+
+metadata_file=(docs_polyester/*reads)
+sub_dir=(`ls docs_polyester/*reads | perl -p -e 's{.+/(.+?)simulated_reads}{01.polyester.$1}'`)
+
+input_gtf=()
+TxDb_sqlite=()
+metadata=()
+sub_dirs=()
+for j in {0..1}
+do
+  for k in {0..7}
+  do
+     input_gtf+=(${input_gtf_type[$j]})
+     TxDb_sqlite+=(${TxDb[$j]})  
+     metadata+=(${metadata_file[$k]})
+     sub_dirs+=(${sub_dir[$k]})
+  done
+done
+
+outdir=results/081.polyester.simulation/${input_gtf[$i]}/${sub_dirs[$i]}
+mkdir -p ${outdir}
+
+singularity exec  ~/bioc_sandbox  Rscript --vanilla scripts_polyester/015.extract.annotate.R \
+                    --TxDb="${TxDb_sqlite[$i]}" \
+                    --outdir=${outdir}   --metadata="${metadata[$i]}"

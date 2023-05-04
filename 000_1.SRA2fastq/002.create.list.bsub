@@ -1,0 +1,22 @@
+#!/bin/bash
+
+#BSUB -n 1  # minmal numbers of processors required for a parallel job
+#BSUB -R rusage[mem=1000] # ask for memory 5G
+#BSUB -W 1:00 #limit the job to be finished in 12 hours
+#BSUB -J "fastQC[1-4]"
+#BSUB -q short   # which queue we want to run in
+#BSUB -o logs/out.%J.%I.txt # log
+#BSUB -e logs/err.%J.%I.txt # error
+#BSUB -R "span[hosts=1]" # All hosts on the same chassis"
+#BSUB -w "done(39521)"
+
+i=$(($LSB_JOBINDEX- 1))
+mkdir -p logs
+
+sub_dir=(`ls docs/*.SraRunInfo.txt | perl -p -e 's{.+/(.+?.seq).+}{$1}'`)
+in=data/${sub_dir[$i]}
+out=docs/${sub_dir[$i]}
+mkdir -p $out
+
+ls ${in}/* > $out/sra.list
+

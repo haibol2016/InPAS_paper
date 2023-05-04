@@ -1,0 +1,50 @@
+#!/bin/bash
+
+#BSUB -n 12  # minmal numbers of processors required for a parallel job
+#BSUB -R rusage[mem=8000] # ask for memory 5G
+#BSUB -W 8:00 #limit the job to be finished in 12 hours
+#BSUB -J "star[1-16]%20"
+#BSUB -q long   # which queue we want to run in
+#BSUB -o logs/out.%J.%I.txt # log
+#BSUB -e logs/err.%J.%I.txt # error
+#BSUB -R "span[hosts=1]" # All hosts on the same chassis"
+##BSUB -w "done(1037606)"
+
+i=$(($LSB_JOBINDEX - 1))
+
+module load jdk/1.8.0_77
+module load star/2.5.3a
+
+R1=(`ls  hela_data/*_R1.fastq.gz `)
+R2=(`ls  hela_data/*_R2.fastq.gz `)
+
+name=(`ls hela_data/*_R1.fastq.gz |  perl -p -e s'{.+/(.+?)_R1.fastq.gz}{$1}'`)
+out=results/005.STAR.out/02.hela
+mkdir -p $out
+
+set -u
+set -e
+set -o pipefail
+
+
+genomeDir=docs_2/GRCh38.GenCodeV34.sjdboverhang_99.star.v253a
+STAR --twopassMode Basic  \
+    --limitSjdbInsertNsj  2000000 \
+     --outFileNamePrefix  ${out}/${name[$i]} \
+      --genomeDir  $genomeDir  \
+      --readFilesCommand zcat \
+      --readFilesIn  ${R1[$i]}  ${R2[$i]} \
+    --outSAMunmapped Within --outFilterType BySJout \
+    --outSAMattributes NH HI AS NM MD \
+    --outFilterMultimapNmax 200 \
+    --outFilterMismatchNmax 999 \
+    --outFilterMismatchNoverLmax 0.04 \
+    --alignIntronMin 20 --alignIntronMax 1000000 \
+    --alignMatesGapMax 1000000 --alignSJoverhangMin 8 \
+    --alignSJDBoverhangMin 1 --sjdbScore 1 --runThreadN 8 \
+    --genomeLoad NoSharedMemory --outSAMtype BAM Unsorted \
+    --outSAMheaderHD @HD VN:1.4 SO:unsorted
+
+# remove intermediate files
+rm -rf   ${out}/${name[$i]}_STARtmp   ${out}/${name[$i]}_STARgenome ${out}/${name[$i]}Log.out ${out}/${name[$i]}Log.progress.out ${out}/${name[$i]}SJ.out.tab
+

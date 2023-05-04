@@ -1,0 +1,28 @@
+#!/bin/bash
+
+#BSUB -n 4  # minmal numbers of processors required for a parallel job
+#BSUB -R rusage[mem=8000] # ask for memory 5G
+#BSUB -W 4:00 #limit the job to be finished in 12 hours
+#BSUB -J "star[1-72]%50"
+#BSUB -q short   # which queue we want to run in
+#BSUB -o logs/out.%J.%I.txt # log
+#BSUB -e logs/err.%J.%I.txt # error
+#BSUB -R "span[hosts=1]" # All hosts on the same chassis"
+##BSUB -w "done(16408)"
+
+i=$(($LSB_JOBINDEX- 1))
+
+module load samtools/1.9
+in=~/michael_lodato/ATAC-seq/InPAS/006.samtools.sort.out/5.breast_cancer.PE.RNA-seq 
+
+# list of absolute path
+PE_bam=(${in}/*_R1.srt.bam)
+SE_bam=(${in}/*SE.srt.bam)
+name=(`ls ${in}/*_R1.srt.bam | perl -p -e s'{.+/(.+?)_R1.srt.bam}{$1}'`)
+sub_dir=(`ls ${in}/*_R1.srt.bam  | perl -p -e s'{.+/(.+)/.+}{$1}'`)
+out=~/michael_lodato/ATAC-seq/InPAS/007.samtools.merge.out/${sub_dir[$i]}
+
+mkdir -p $out
+samtools merge  -f  -O BAM -@ 4  $out/${name[$i]}.srt.mrg.bam  ${PE_bam[$i]} ${SE_bam[$i]}
+samtools index  $out/${name[$i]}.srt.mrg.bam
+

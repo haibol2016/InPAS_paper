@@ -1,0 +1,34 @@
+#!/bin/bash
+
+#BSUB -n 10  # minmal numbers of processors required for a parallel job
+#BSUB -R rusage[mem=8000] # ask for memory 5G
+#BSUB -R "select[rh=8]"
+#BSUB -W 4:00 #limit the job to be finished in 12 hours
+#BSUB -J "star[1-8]%50"
+#BSUB -q short    # which queue we want to run in
+#BSUB -o logs/out.%J.%I.txt # log
+#BSUB -e logs/err.%J.%I.txt # error
+#BSUB -R "span[hosts=1]" # All hosts on the same chassis"
+##BSUB -w "done(4651552)"
+
+i=$(($LSB_JOBINDEX- 1))
+mkdir -p logs
+
+set -e 
+set -u
+set -o pipefail
+TxDb_sqlite=(docs/human.liver.brain.GRCh38.v34.TxDb.sqlite)
+bedgraph=(`cut -f3 docs/00.InPAS.metadata.txt | tail -n +2`)
+
+sqlite_db=results/014.InPAS.out/InPAS_hugeData.sqlite
+tag=(`cut -f1 docs/00.InPAS.metadata.txt | tail -n +2`)
+
+outdir=results/014.InPAS.out
+mkdir -p ${outdir}
+
+time singularity exec  ~/bioc_sandbox/ Rscript --vanilla scripts/017.get_ssRleCov.R \
+        --bedgraph="${bedgraph[$i]}"  \
+        --tag=${tag[$i]} \
+        --outdir=${outdir}  \
+        --sqlite_db=${sqlite_db} \
+        --TxDb=${TxDb_sqlite[0]}

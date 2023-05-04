@@ -1,0 +1,33 @@
+#!/bin/bash
+
+#BSUB -n 1  # minmal numbers of processors required for a parallel job
+#BSUB -R rusage[mem=24000] # ask for memory 5G
+#BSUB -W 12:00 #limit the job to be finished in 12 hours
+#BSUB -J "star[1]%30"
+#BSUB -q long    # which queue we want to run in
+#BSUB -o logs/out.%J.%I.txt # log
+#BSUB -e logs/err.%J.%I.txt # error
+#BSUB -R "span[hosts=1]" # All hosts on the same chassis"
+
+i=$(($LSB_JOBINDEX- 1))
+mkdir -p logs
+
+set -e 
+set -u
+set -o pipefail
+
+module load R/4.0.0_gcc
+dir=~/work/mccb/genome/Homo_sapiens/human_gencode_v34
+out_dir=docs/GRCh38.BSgenome
+
+mkdir -p $out_dir 
+
+Rscript 041.create.BSgenome.R --path_single_fasta_genome $dir/GRCh38.primary_assembly.genome.fa.gz \
+                              --out_dir $out_dir \
+                              --latin_name "Homo sapiens" \
+                              --common_name Human \
+			      --genome_build GRCh38 \
+			      --seed_file_name GRCh38.BSgenome.seed\
+                              --fasta_url https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_34/GRCh38.primary_assembly.genome.fa.gz\
+                              --source Gencode \
+                              --version 1.0.0

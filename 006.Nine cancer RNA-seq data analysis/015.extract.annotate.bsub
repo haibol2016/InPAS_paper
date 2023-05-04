@@ -1,0 +1,30 @@
+#!/bin/bash
+
+#BSUB -n 1  # minmal numbers of processors required for a parallel job
+#BSUB -R rusage[mem=8000] # ask for memory 5G
+#BSUB -R "select[rh=8]"
+#BSUB -W 4:00 #limit the job to be finished in 12 hours
+#BSUB -J "star[1-50]%50"
+#BSUB -q short    # which queue we want to run in
+#BSUB -o logs/out.%J.%I.txt # log
+#BSUB -e logs/err.%J.%I.txt # error
+#BSUB -R "span[hosts=1]" # All hosts on the same chassis"
+##BSUB -w "done(4651303)"
+
+i=$(($LSB_JOBINDEX- 1))
+mkdir -p logs
+
+#source ~/work/mccb/bin/miniconda2/etc/profile.d/conda.sh
+#conda activate seurat4
+
+set -euo pipefail
+
+TxDb_sqlite=(`ls human_gencode_v34/005.nine.cancer.expressed/*.TxDb.sqlite`)
+sub_dir=(`ls human_gencode_v34/005.nine.cancer.expressed/*.TxDb.sqlite | perl -p -e 's{.+/(.+?).TxDb.sqlite}{$1}'` )
+metadata=docs_2/007.nine.cancer/${sub_dir[$i]}.metadata.txt
+outdir=results/014.InPAS.out/${sub_dir[$i]}
+
+mkdir -p ${outdir}
+
+singularity exec  ~/bioc_sandbox/ Rscript --vanilla scripts_liver/015.extract.annotate.R  --TxDb="${TxDb_sqlite[$i]}" \
+        --outdir=${outdir}   --metadata="${metadata}"

@@ -1,0 +1,49 @@
+#!/bin/bash
+
+#BSUB -n 2  # minmal numbers of processors required for a parallel job
+#BSUB -R rusage[mem=16000] # ask for memory 5G
+#BSUB -R select[rh=8]
+#BSUB -W 12:00 #limit the job to be finished in 12 hours
+#BSUB -J "star[1-16]%50"
+#BSUB -q long    # which queue we want to run in
+#BSUB -o logs/out.%J.%I.txt # log
+#BSUB -e logs/err.%J.%I.txt # error
+#BSUB -R "span[hosts=1]" # All hosts on the same chassis"
+##BSUB -w "done(274293)"
+
+i=$(($LSB_JOBINDEX- 1))
+mkdir -p logs
+
+set -e 
+set -u
+set -o pipefail
+
+utr3=(results/081.polyester.simulation/*/01.polyester.*/01.3UTR.annotation.RDS)
+sqlite_db=(results/081.polyester.simulation/*/*/InPAS_hugeData.sqlite)
+outdir=(results/081.polyester.simulation/*/*)
+
+TxDb_f=(results/080.polyester.simulation/polyester.sim.long/008.polyester.sim.long.TxDb.sqlite  results/080.polyester.simulation/polyester.sim.short.single/008.polyester.sim.short.single.TxDb.sqlite)
+TxDb=()
+
+for k in {0..1}
+do
+  for l in {0..7}
+  do
+     TxDb+=(${TxDb_f[$k]})     
+  done
+done
+
+
+seqname=(`ls ${outdir[$i]}/006.CPsites.out/*_CPsites.RDS | perl -p -e 's{.+/(.+?)_.+}{$1}'`)
+
+for j in ${seqname[@]}
+do
+
+time singularity exec  ~/bioc_sandbox/ Rscript --vanilla scripts_polyester/021.get.regionCov.R  \
+        --seqname=${j}  \
+        --utr3=${utr3[$i]}  \
+        --outdir=${outdir[$i]}  \
+        --sqlite_db=${sqlite_db[$i]} \
+        --TxDb_file=${TxDb[$i]}  
+done
+

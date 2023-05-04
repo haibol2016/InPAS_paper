@@ -1,0 +1,28 @@
+#!/bin/bash
+
+#BSUB -n 1  # minmal numbers of processors required for a parallel job
+#BSUB -R rusage[mem=8000] # ask for memory 5G
+#BSUB -R "select[rh=8]"
+#BSUB -W 4:00 #limit the job to be finished in 12 hours
+#BSUB -J "star[1-72]%50"
+#BSUB -q short    # which queue we want to run in
+#BSUB -o logs/out.%J.%I.txt # log
+#BSUB -e logs/err.%J.%I.txt # error
+#BSUB -R "span[hosts=1]" # All hosts on the same chassis"
+##BSUB -w "done(1237649)"
+
+i=$(($LSB_JOBINDEX- 1))
+mkdir -p logs
+
+#source ~/work/mccb/bin/miniconda2/etc/profile.d/conda.sh
+#conda activate seurat4
+set -euo pipefail
+
+data=KIRC
+chromosome_info=../human_gencode_v34/GRCh38.primary_assembly.genome.chr.length
+gtf=(`ls docs/gtf/$data/*.gtf`)
+name=(`ls docs/gtf/$data/*.gtf | perl -p -e 's{.+/(.+?).expressed.gtf}{$1}'`)
+out=docs/TxDb/$data
+mkdir -p ${out}
+
+singularity exec  ~/bioc_sandbox/ Rscript scripts/014.TxDb.R  ${chromosome_info}  ${gtf[$i]}  ${out}/${name[$i]}.TxDb.sqlite

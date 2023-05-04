@@ -1,0 +1,37 @@
+#!/bin/bash
+
+#BSUB -n 10  # minmal numbers of processors required for a parallel job
+#BSUB -R rusage[mem=8000] # ask for memory 5G
+#BSUB -R "select[rh=8]"
+#BSUB -W 4:00 #limit the job to be finished in 12 hours
+#BSUB -J "star[1-4]%50"
+#BSUB -q short    # which queue we want to run in
+#BSUB -o logs/out.%J.%I.txt # log
+#BSUB -e logs/err.%J.%I.txt # error
+#BSUB -R "span[hosts=1]" # All hosts on the same chassis"
+
+i=$(($LSB_JOBINDEX- 1))
+mkdir -p logs
+
+#source ~/work/mccb/bin/miniconda2/etc/profile.d/conda.sh
+#conda activate seurat4
+
+set -e 
+set -u
+set -o pipefail
+
+bedgraph_dir=results/010.bedtools.bedgraph.out/4.splitted.HeLa.PE.RNA-seq
+bedgraph=(${bedgraph_dir}/*.srt.mrg.bedgraph)
+
+sqlite_db=results/045.InPAS.out/4.HeLa.PE.RNA-seq/InPAS_hugeData.sqlite
+TxDb_sqlite=human_gencode_v34/002.Hela.expressed/Hela.expressed.gencode.v34.refiltered.TxDb.sqlite
+tag=(`cut -f1 docs_2/HeLa/001.HeLa.metadata.txt | tail -n -4`)
+
+outdir=results/045.InPAS.out/4.HeLa.PE.RNA-seq
+
+singularity exec  ~/bioc_sandbox/  Rscript --vanilla scripts_hela/017.get_ssRleCov.R \
+        --bedgraph="${bedgraph[$i]}"  \
+        --tag=${tag[$i]} \
+        --outdir=${outdir}  \
+        --sqlite_db=${sqlite_db} \
+        --TxDb=${TxDb_sqlite}

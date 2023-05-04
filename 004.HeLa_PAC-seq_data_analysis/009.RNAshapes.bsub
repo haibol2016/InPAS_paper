@@ -1,0 +1,32 @@
+#!/bin/bash
+
+#BSUB -n 1  # minmal numbers of processors required for a parallel job
+#BSUB -R rusage[mem=64000] # ask for memory 5G
+#BSUB -W 24:00 #limit the job to be finished in 12 hours
+#BSUB -J "star[1-3,5,6,8]%50"
+#BSUB -q long   # which queue we want to run in
+#BSUB -o logs/out.%J.%I.txt # log
+#BSUB -e logs/err.%J.%I.txt # error
+#BSUB -R "span[hosts=1]" # All hosts on the same chassis"
+##BSUB -w "done(1045005)"
+
+i=$(($LSB_JOBINDEX- 1))
+
+module load samtools/1.9
+module load perl/5.18.1
+
+source ~/work/mccb/bin/miniconda2/etc/profile.d/conda.sh
+conda activate DeepPASTA
+
+fasta=(results/008.candidate.PAS.context.out/*fasta) 
+name=(`ls results/008.candidate.PAS.context.out/*fasta | perl -p -e 's{.+/(.+?).fasta}{$1}'`)
+
+RNAshapes=/home/hl84w/work/mccb/bin/DeepPASTA/generating_secondary_structure_from_sequence
+
+out=results/008.RNAshapes.2.out/
+mkdir -p $out
+
+$RNAshapes/RNAshapes  -f ${fasta[$i]}  -s -c 5 -t 1 -w 100 -W 100 -O 'D{%s\n}' > $out/${name[$i]}.rnashape.1.txt
+python $RNAshapes/combining_substructure.py -i $out/${name[$i]}.rnashape.1.txt  -o  $out/${name[$i]}.rnashape.2.txt
+python $RNAshapes/filtering_number_of_ss.py -n 3 -i $out/${name[$i]}.rnashape.2.txt  -o $out/${name[$i]}.rnashape.3.txt
+python $RNAshapes/shape_assign_per_nucleotide.py -c 3 -i $out/${name[$i]}.rnashape.3.txt -o $out/${name[$i]}.rnashape.4.txt

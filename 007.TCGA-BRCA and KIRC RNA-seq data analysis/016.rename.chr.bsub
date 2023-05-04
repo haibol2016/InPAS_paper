@@ -1,0 +1,28 @@
+#!/bin/bash
+
+#BSUB -n 1  # minmal numbers of processors required for a parallel job
+#BSUB -R rusage[mem=8000] # ask for memory 5G
+#BSUB -R "select[rh=8]"
+#BSUB -W 4:00 #limit the job to be finished in 12 hours
+#BSUB -J "star[73-144]%50"
+#BSUB -q short    # which queue we want to run in
+#BSUB -o logs/out.%J.%I.txt # log
+#BSUB -e logs/err.%J.%I.txt # error
+#BSUB -R "span[hosts=1]" # All hosts on the same chassis"
+##BSUB -w "done(4651303)"
+
+i=$(($LSB_JOBINDEX- 1))
+mkdir -p logs
+
+#source ~/work/mccb/bin/miniconda2/etc/profile.d/conda.sh
+#conda activate seurat4
+
+set -euo pipefail
+data=KIRC
+bedgraph=(results/001.bedgraph/$data/*.bedgraph)
+name=(`ls results/001.bedgraph/$data/*.bedgraph | perl -p -e 's{.+/}{}'`)
+outdir=results/010.bedtools.bedgraph.out/$data
+
+mkdir -p ${outdir}
+
+perl -p -e 's{chr.+?_}{}; s{_random}{}; s{v}{.}' ${bedgraph[$i]} | awk 'BEGIN{FS=OFS="\t"}NR == FNR{a[$1] =1; next} $1 in a {print}' ~/arthur_mercurio/Haibo/InPAS/human_gencode_v34/GRCh38.primary_assembly.genome.chr.length - > $outdir/${name[$i]}

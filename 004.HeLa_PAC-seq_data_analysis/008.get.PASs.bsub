@@ -1,0 +1,42 @@
+#!/bin/bash
+
+#BSUB -n 1  # minmal numbers of processors required for a parallel job
+#BSUB -R rusage[mem=16000] # ask for memory 5G
+#BSUB -W 4:00 #limit the job to be finished in 12 hours
+#BSUB -J "star[1-8]%50"
+#BSUB -q short   # which queue we want to run in
+#BSUB -o logs/out.%J.%I.txt # log
+#BSUB -e logs/err.%J.%I.txt # error
+#BSUB -R "span[hosts=1]" # All hosts on the same chassis"
+##BSUB -w "done(16408)"
+
+set -e
+set -u
+set -o pipefail
+
+i=$(($LSB_JOBINDEX- 1))
+
+module load samtools/1.9
+module load perl/5.18.1
+
+bam=(results/030.polyAseq.filt.bam/*.bam)
+name=(`ls results/030.polyAseq.filt.bam/*.bam | perl -p -e s'{.+/(.+).srt.mrg.flt.bam}{$1}'`)
+
+seq_type=()
+
+for f in ${bam[@]}
+do
+   if [[ $f =~ barin || $f =~ UHR ]]; then
+      seq_type+=("polyA-seq")
+   else
+      seq_type+=("PAC-seq")
+   fi
+
+done
+
+out=results/008.candidate.PAS.out
+
+mkdir -p $out
+
+samtools view  ${bam[$i]}  | perl find.potential.PASs.pl  -  ${seq_type[$i]} \
+               > $out/${name[$i]}.${seq_type[$i]}.bedgraph
